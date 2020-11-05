@@ -1,0 +1,4 @@
+rapport/*.aux
+rapport/*.log
+rapport/*.synctex.gz
+code/bin
