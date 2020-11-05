@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="fragment_assembler" basedir=".">
+	<property name="src" value="src/"/>
+	<property name="build" value="build/"/>
+
+	<target name="build">
+		<mkdir dir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" includeantruntime="false">
+		</javac>
+	</target>
+	<target name="run" depends="build">
+		<java classname="FragmentAssembler" classpath="${build}" fork="true"/>
+	</target>
+
+	<target name="clean">
+		<delete includeEmptyDirs="true" failonerror="false">
+			<fileset dir="${build}" includes="**/*"/>
+		</delete>
+	</target>
+
+</project>
