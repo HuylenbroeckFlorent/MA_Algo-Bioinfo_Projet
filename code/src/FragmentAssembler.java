@@ -66,28 +66,4 @@ class FragmentAssembler{
 		System.out.println(comp);
 		return null;
 	}
-
-	/**
-	* Finds every occurences of a word in a sequence (Knuth, Morris, Pratt).
-	*/
-	public static int[] FindOccurencesKMP(String seq, String word){
-		int comp = 0;
-		if(seq.length()<word.length())
-			return null;
-		for(int i=0; i<seq.length()-(word.length()+1); i++){
-			int j=0;
-			while(j<word.length()-1){
-				if(word.charAt(j)==seq.charAt(i+j)){
-					j++;
-					comp++;
-				}
-				else
-					break;
-			}
-			if(j==word.length()-1)
-				System.out.println(i);
-		}
-		System.out.println(comp);
-		return null;
-	}
 }
