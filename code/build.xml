@@ -10,7 +10,11 @@
 		</javac>
 	</target>
 	<target name="run" depends="build">
-		<java classname="FragmentAssembler" classpath="${build}" fork="true"/>
+		<java classname="FragmentAssembler" classpath="${build}" fork="true">
+			<arg value="${arg1}"/>
+			<arg value="${arg2}"/>
+			<arg value="${arg3}"/>
+		</java>
 	</target>
 
 	<target name="clean">
