@@ -1,1 +1,1 @@
-# MA_Algo-Bioinfo_Projet
+# Projet d'algorithmique et bioinformatique
