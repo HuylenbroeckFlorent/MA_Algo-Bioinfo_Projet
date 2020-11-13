@@ -13,28 +13,24 @@ class FragmentAssembler{
 	private static ArrayList<byte[]> fragments;
 
 	/**
-	* Adjacency matrix for the overlap graph.
-	*/
-	private static int[][] overlap_graph;
+	* Adjacency matrix for the overlap multigraph.
+	* Dimensions are :
+	* 1 : first fragment index.
+	* 2 : second fragment index.
+	* 3 : four possible edges between those two fragments, as follow :
+	*		1 : Semiglobal alignment score between the both fragments.
+	*		2 : Semiglobal alignment score between the first fragment and the inverted and complemented second fragment.
+	*		3 : Semiglobal alignment score between the inverted and complemented first fragment and the second fragment.
+	*		4 : Semiglobal alignment score between both inverted and complemented fragments.
+	* This matrix is triangular, so that the same value is not stored twice for every edges.
+	*/ 
+	private static int[][][] overlap_multigraph;
 
 	/***/
 	public static void main(String[] args){
 		fragments = OpenFasta(args[0]);
-		overlap_graph = new int[fragments.size()][fragments.size()];
-
-		for(int i=0; i<fragments.size(); i++){
-			for(int j=0; j<fragments.size(); j++){
-				if (i==j)
-					continue;
-				overlap_graph[i][j]=SemiGlobalAlignment(fragments.get(i), fragments.get(j))[fragments.get(i).length][fragments.get(j).length];
-			}
-		}
-		for(int i=0; i<fragments.size(); i++){
-			for(int j=0; j<i; j++){
-				System.out.print(overlap_graph[i][j]+ " ");
-			}
-			System.out.println();
-		}
+		overlap_multigraph = OverlapMultigraph(fragments);
+		
 
 	}
 
@@ -81,6 +77,11 @@ class FragmentAssembler{
 	* Complements and invert a fragment.
 	* A <-> T
 	* C <-> G
+	* (byte) '-' == 45
+	* (byte) 'a' == 97
+	* (byte) 'c' == 99
+	* (byte) 'g' == 103
+	* (byte) 't' == 116
 	*
 	* @param fragment 	byte[], fragment to be complemented and inverted.
 	* @return 			byte[], the complemented and inverted fragment. 
@@ -90,10 +91,10 @@ class FragmentAssembler{
 
 		for(int i=0; i<fragment.length; i++){
 			switch(fragment[i]){
-				case 'a' : fragmentCI[fragment.length-i-1]='t'; break;
-				case 'c' : fragmentCI[fragment.length-i-1]='g'; break;
-				case 'g' : fragmentCI[fragment.length-i-1]='c'; break;
-				case 't' : fragmentCI[fragment.length-i-1]='a'; break;
+				case 97 : fragmentCI[fragment.length-i-1]=116; break;
+				case 99 : fragmentCI[fragment.length-i-1]=103; break;
+				case 103 : fragmentCI[fragment.length-i-1]=99; break;
+				case 116 : fragmentCI[fragment.length-i-1]=97; break;
 				default : break;
 			}
 		}
@@ -109,7 +110,7 @@ class FragmentAssembler{
 	* @param fragment2 	byte[] that holds the second fragment to be aligned.
 	* @return 			int[][] matrix that holds the alignment scores.
 	*/
-	private static int[][] SemiGlobalAlignment(byte[] fragment1, byte[] fragment2){
+	private static int SemiGlobalAlignmentScore(byte[] fragment1, byte[] fragment2){
 		int m = fragment1.length+1, n = fragment2.length+1, gap_score = -2, mismatch_score = -1, match_score = 1;
 
 		int[][] sims = new int[m][n];
@@ -129,6 +130,41 @@ class FragmentAssembler{
 			}
 		}
 
-		return sims;
+		return sims[fragment1.length][fragment2.length];
 	}
+
+	/**
+	* Builds an overlap multigraph based on a set of fragments.
+	*
+	* @param fragments 	ArrayList<byte[]>, the fragments from which the graph will be built.
+	* @return 			int[][][], the overlap multigraph.
+	*/
+	private static int[][][] OverlapMultigraph(ArrayList<byte[]> fragments){
+		overlap_multigraph = new int[fragments.size()][fragments.size()][4];
+
+		for(int i=0; i<fragments.size(); i++){
+			for(int j=0; j<fragments.size(); j++){
+				if (i==j)
+					continue;
+				byte[] fragment1 = fragments.get(i);
+				byte[] fragment2 = fragments.get(j);
+				byte[] fragmentIC1 = InvertAndComplement(fragment1); //TODO reduce the number of call to InvertAndComplement()
+				byte[] fragmentIC2 = InvertAndComplement(fragment2);
+
+				overlap_multigraph[i][j][0] = SemiGlobalAlignmentScore(fragment1, fragment2); // 1 - 2
+				overlap_multigraph[i][j][1] = SemiGlobalAlignmentScore(fragment1, fragmentIC2); // 1 - 2(ic)
+				overlap_multigraph[i][j][2] = SemiGlobalAlignmentScore(fragmentIC1, fragment2); // 1(ic) - 2
+				overlap_multigraph[i][j][3] = SemiGlobalAlignmentScore(fragmentIC1, fragmentIC2); // 1(ic) - 2(ic)
+			}
+		}
+		return overlap_multigraph;
+	}
+
+	/**
+	*/
+	private static int[] GreedyHamiltonianPath(int[][][] overlap_multigraph){
+		boolean[] in = new boolean[overlap_multigraph[0].length];
+		boolean[] out = new boolean[overlap_multigraph[0].length];
+		return new int[1]; 
+ 	}
 }
