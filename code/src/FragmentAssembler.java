@@ -30,7 +30,24 @@ class FragmentAssembler{
 	public static void main(String[] args){
 		fragments = OpenFasta(args[0]);
 		overlap_multigraph = OverlapMultigraph(fragments);
-		
+		int[] path = GreedyHamiltonianPath(overlap_multigraph);
+		for(int i:path){
+			System.out.print(""+i+" ");
+		}
+		System.out.println();
+
+		/* TEST
+		for(int i=0; i<overlap_multigraph.length; i++){
+			for(int j=0; j<i; j++){
+				if(i==j)
+					continue;
+				System.out.println("fragment "+i+" + fragment "+j+" : "+overlap_multigraph[i][j][0]);
+				System.out.println("fragment "+i+" + tnemgarf "+j+" : "+overlap_multigraph[i][j][1]);
+				System.out.println("tnemgarf "+i+" + fragment "+j+" : "+overlap_multigraph[i][j][2]);
+				System.out.println("tnemgarf "+i+" + tnemgarf "+j+" : "+overlap_multigraph[i][j][3]);
+			}
+		}
+		*/
 
 	}
 
@@ -163,8 +180,135 @@ class FragmentAssembler{
 	/**
 	*/
 	private static int[] GreedyHamiltonianPath(int[][][] overlap_multigraph){
-		boolean[] in = new boolean[overlap_multigraph[0].length];
-		boolean[] out = new boolean[overlap_multigraph[0].length];
-		return new int[1]; 
+		byte[] count = new byte[overlap_multigraph.length];
+		int max = Integer.MIN_VALUE, max_i = 0, max_j = 0, max_k = 0;
+		ArrayList<int[]> axes = new ArrayList<int[]>();
+
+		for(int d=0; d<overlap_multigraph.length-1; d++){
+			for(int i=0; i<overlap_multigraph.length; i++){
+				if(Math.abs(count[i])>1) // Already two axes chosen
+					continue;
+				for(int j=0; j<overlap_multigraph[i].length; j++){
+					if(Math.abs(count[j])>1) // Already two axes chosen
+						continue;
+
+					if(i==j) // Can't match a node with itself
+						continue;
+
+					int ks[];
+					if(count[i]==0){
+						if(count[j]==0){
+							ks=new int[] {0,1,2,3};
+						}
+						else if(count[j]>0){
+							ks=new int[] {0,2};
+						}
+						else{
+							ks=new int[] {1,3};
+						}
+					}
+					else if(count[i]>0){
+						if(count[j]==0){
+							ks=new int[] {0,1};
+						}
+						else if(count[j]>0){
+							ks=new int[] {0};
+						}
+						else{
+							ks=new int[] {1};
+						}
+					}
+					else{
+						if(count[j]==0){
+							ks=new int[] {2,3};
+						}
+						else if(count[j]>0){
+							ks=new int[] {2};
+						}
+						else{
+							ks=new int[] {3};
+						}
+					}
+
+					for(int k:ks){
+						if (overlap_multigraph[i][j][k]>max){
+							boolean replace = true;
+							for(int[] axe : axes){
+								if( (Math.abs(axe[0])==j && Math.abs(axe[1])==i) || (Math.abs(axe[0])==i && Math.abs(axe[1])==j)){
+									replace = false;
+									continue;
+								}
+							}
+							if (replace){
+								max = overlap_multigraph[i][j][k];
+							max_i=i;
+							max_j=j;
+							max_k=k;
+							}
+							
+						}
+					}
+				}
+			}
+
+			if (max_k==0){
+				axes.add(new int[] {max_i, max_j, max});
+				count[max_i] = (byte) (count[max_i]+1);
+				count[max_j] = (byte) (count[max_j]+1);
+			}
+			else if (max_k==1){
+				axes.add(new int[] {max_i, -max_j, max});
+				count[max_i] = (byte) (count[max_i]+1);
+				count[max_j] = (byte) (count[max_j]-1);
+			}
+			else if (max_k==2){
+				axes.add(new int[] {-max_i, max_j, max});
+				count[max_i] = (byte) (count[max_i]-1);
+				count[max_j] = (byte) (count[max_j]+1);
+			}
+			else if (max_k==3){
+				axes.add(new int[] {-max_i, -max_j, max});
+				count[max_i] = (byte) (count[max_i]-1);
+				count[max_j] = (byte) (count[max_j]-1);
+			}
+
+			max = Integer.MIN_VALUE;
+			max_i = 0;
+			max_j = 0;
+			max_k = 0;
+
+		}
+
+		System.out.println(count[55]);
+
+		int[] greedy_hamiltionian_path = new int[overlap_multigraph.length-1];
+
+		for(int i=0; i<count.length; i++){
+			if (count[i]==1){
+				greedy_hamiltionian_path[0]=i;
+				break;
+			}
+			else if (count[i]==-1){
+				greedy_hamiltionian_path[0]=-i;
+				break;
+			}
+		}
+
+		for(int i=1; i<greedy_hamiltionian_path.length; i++){
+			for(int[] axe:axes){
+				if (axe[0]==greedy_hamiltionian_path[i-1]){
+					greedy_hamiltionian_path[i]=axe[1];
+					axes.remove(axe);
+					break;
+				}
+				else if (axe[1]==greedy_hamiltionian_path[i-1]){
+					greedy_hamiltionian_path[i]=axe[0];
+					axes.remove(axe);
+					break;
+				}
+			}
+		}
+		
+		return greedy_hamiltionian_path;
  	}
 }

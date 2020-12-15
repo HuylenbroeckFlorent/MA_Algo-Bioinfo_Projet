@@ -2,3 +2,4 @@ rapport/*.aux
 rapport/*.log
 rapport/*.synctex.gz
 code/build
+code/output.txt
